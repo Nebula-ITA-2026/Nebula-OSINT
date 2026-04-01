@@ -21,7 +21,7 @@ Nebula OSINT is a new tool create by NEBULA, a group of programmers and "hackers
 
 or...
 
-1)git clone https://github.com/Nebula-ITA-2026/Nebula-OSINT.git 
+1) git clone https://github.com/Nebula-ITA-2026/Nebula-OSINT.git 
 
 and continue as it was before
 
