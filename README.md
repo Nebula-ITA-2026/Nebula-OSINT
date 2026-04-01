@@ -15,7 +15,7 @@ Nebula OSINT is a new tool create by NEBULA, a group of programmers and "hackers
 
 2) then cd NebulaOsint
 
-3)then pip install -r requirements.txt and then: python3 tool.py
+3) then pip install -r requirements.txt and then: python3 tool.py
 
 4) python3 tool.py
 
