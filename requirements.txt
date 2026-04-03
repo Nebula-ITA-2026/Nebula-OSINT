@@ -1,5 +1,9 @@
-python-whois
-requests
-dnspython
-beautifulsoup4
-colorama
+import socket
+import requests
+import whois
+import dns.resolver
+import ssl
+import os
+import subprocess
+from bs4 import BeautifulSoup
+from colorama import Fore, Style, init
