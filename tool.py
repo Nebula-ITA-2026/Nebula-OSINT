@@ -208,6 +208,47 @@ class Nebula:
             print(f"{Fore.WHITE}{output}")
         except: print(f"{Fore.RED}[!] Errore durante il traceroute.")
 
+    def check_phone(self, phone):
+        print(f"\n{Fore.YELLOW}[+] Analisi Numero di Telefono: {phone}")
+        try:
+            import phonenumbers
+            from phonenumbers import geocoder, carrier, timezone
+            parsed_number = phonenumbers.parse(phone)
+            if phonenumbers.is_valid_number(parsed_number):
+                region = geocoder.description_for_number(parsed_number, "it")
+                operator = carrier.name_for_number(parsed_number, "it")
+                tz = timezone.time_zones_for_number(parsed_number)
+                print(f"{Fore.GREEN}Validità: Valido")
+                print(f"{Fore.GREEN}Paese/Regione: {region}")
+                print(f"{Fore.GREEN}Operatore: {operator}")
+                print(f"{Fore.GREEN}Fuso Orario: {tz}")
+            else:
+                print(f"{Fore.RED}[!] Numero non valido (assicurati di usare il prefisso internazionale, es: +39).")
+        except ImportError:
+            print(f"{Fore.RED}[!] Errore: Libreria 'phonenumbers' non installata. Esegui: pip install phonenumbers")
+        except Exception as e:
+            print(f"{Fore.RED}[!] Errore: {e}")
+
+    def wayback_check(self, url):
+        print(f"\n{Fore.YELLOW}[+] Verifica Wayback Machine: {url}")
+        try:
+            api_url = f"http://archive.org/wayback/available?url={url}"
+            res = requests.get(api_url, timeout=10).json()
+            if res.get('archived_snapshots'):
+                snap = res['archived_snapshots']['closest']
+                print(f"{Fore.GREEN}[FOUND] Ultimo snapshot: {snap['timestamp']}")
+                print(f"{Fore.GREEN}Link: {snap['url']}")
+            else:
+                print(f"{Fore.RED}[-] Nessun archivio trovato per questo URL.")
+        except Exception as e: print(f"{Fore.RED}[!] Errore: {e}")
+
+    def google_dorks(self, domain):
+        print(f"\n{Fore.YELLOW}[+] Link Google Dorks per: {domain}")
+        dorks = {"File Sensibili": "ext:sql|ext:db|ext:log|ext:env", "Login": "inurl:login|inurl:admin", "Directory": "intitle:index.of"}
+        for name, query in dorks.items():
+            link = f"https://www.google.com/search?q=site:{domain}+{query}"
+            print(f"{Fore.GREEN}{name}: {Fore.WHITE}{link}")
+
 def main():
     tool = Nebula()
     while True:
@@ -221,6 +262,8 @@ def main():
         print(f"{Fore.CYAN}║ {Fore.YELLOW}[05]{Fore.WHITE} SSL Verification           {Fore.YELLOW}[12]{Fore.WHITE} Email MX Verify            {Fore.CYAN}║")
         print(f"{Fore.CYAN}║ {Fore.YELLOW}[06]{Fore.WHITE} Web Link Extraction        {Fore.YELLOW}[13]{Fore.WHITE} Ping Host                  {Fore.CYAN}║")
         print(f"{Fore.CYAN}║ {Fore.YELLOW}[07]{Fore.WHITE} Reverse DNS                {Fore.YELLOW}[14]{Fore.WHITE} Traceroute                 {Fore.CYAN}║")
+        print(f"{Fore.CYAN}║ {Fore.YELLOW}[15]{Fore.WHITE} Phone Number Info          {Fore.YELLOW}[16]{Fore.WHITE} Wayback Machine            {Fore.CYAN}║")
+        print(f"{Fore.CYAN}║ {Fore.YELLOW}[17]{Fore.WHITE} Google Dorks Helper                                         {Fore.CYAN}║")
         print(f"{Fore.CYAN}╠══════════════════════════════════════════════════════════════════════╣")
         print(f"{Fore.CYAN}║                {Fore.RED}[00]{Fore.WHITE} Exit / Chiudi il Tool                          {Fore.CYAN}║")
         print(f"{Fore.CYAN}╚══════════════════════════════════════════════════════════════════════╝")
@@ -270,6 +313,15 @@ def main():
         elif choice == '14':
             host = input("Host/IP: ")
             tool.traceroute_host(host)
+        elif choice == '15':
+            phone = input("Numero (es +39123...): ")
+            tool.check_phone(phone)
+        elif choice == '16':
+            url = input("URL: ")
+            tool.wayback_check(url)
+        elif choice == '17':
+            dom = input("Dominio: ")
+            tool.google_dorks(dom)
         elif choice in ['0', '00']:
             print(f"{Fore.MAGENTA}Chiusura...")
             break
