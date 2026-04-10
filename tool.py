@@ -30,6 +30,7 @@ import dns.resolver
 import ssl
 import os
 import subprocess
+import re
 from bs4 import BeautifulSoup
 from colorama import Fore, Style, init
 
@@ -212,16 +213,32 @@ class Nebula:
         print(f"\n{Fore.YELLOW}[+] Analisi Numero di Telefono: {phone}")
         try:
             import phonenumbers
-            from phonenumbers import geocoder, carrier, timezone
+            from phonenumbers import geocoder, carrier, timezone, PhoneNumberFormat, number_type
             parsed_number = phonenumbers.parse(phone)
             if phonenumbers.is_valid_number(parsed_number):
+                # Mapping tipi di numero
+                type_info = number_type(parsed_number)
+                types = {0: "Fisso", 1: "Mobile", 2: "Fisso o Mobile", 3: "Numero Verde (Toll-Free)", 4: "Premium Rate", 6: "VoIP", 7: "Personal Number", 8: "Pager"}
+                readable_type = types.get(type_info, "Sconosciuto")
+
                 region = geocoder.description_for_number(parsed_number, "it")
                 operator = carrier.name_for_number(parsed_number, "it")
                 tz = timezone.time_zones_for_number(parsed_number)
+                
                 print(f"{Fore.GREEN}Validità: Valido")
+                print(f"{Fore.GREEN}Formato Internazionale: {phonenumbers.format_number(parsed_number, PhoneNumberFormat.INTERNATIONAL)}")
+                print(f"{Fore.GREEN}Formato E.164: {phonenumbers.format_number(parsed_number, PhoneNumberFormat.E164)}")
+                print(f"{Fore.GREEN}Tipo: {readable_type}")
                 print(f"{Fore.GREEN}Paese/Regione: {region}")
                 print(f"{Fore.GREEN}Operatore: {operator}")
                 print(f"{Fore.GREEN}Fuso Orario: {tz}")
+                
+                phone_clean = phone.replace('+', '').replace(' ', '')
+                print(f"\n{Fore.YELLOW}[*] Ricerca OSINT suggerita:")
+                print(f"{Fore.WHITE}Google: https://www.google.com/search?q=\"{phone}\"")
+                print(f"{Fore.WHITE}Sync.me: https://sync.me/search?number={phone_clean}")
+                print(f"{Fore.WHITE}Tellows (Spam): https://www.tellows.it/num/{phone_clean}")
+                print(f"{Fore.WHITE}TrueCaller: https://www.truecaller.com/search/it/{phone_clean}")
             else:
                 print(f"{Fore.RED}[!] Numero non valido (assicurati di usare il prefisso internazionale, es: +39).")
         except ImportError:
@@ -249,6 +266,45 @@ class Nebula:
             link = f"https://www.google.com/search?q=site:{domain}+{query}"
             print(f"{Fore.GREEN}{name}: {Fore.WHITE}{link}")
 
+    def identify_hash(self, text):
+        print(f"\n{Fore.YELLOW}[+] Identificazione Hash: {text}")
+        patterns = [
+            (r"^[a-fA-F0-9]{32}$", "MD5"),
+            (r"^[a-fA-F0-9]{40}$", "SHA-1"),
+            (r"^[a-fA-F0-9]{64}$", "SHA-256"),
+            (r"^[a-fA-F0-9]{128}$", "SHA-512")
+        ]
+        found = False
+        for pattern, name in patterns:
+            if re.match(pattern, text.strip()):
+                print(f"{Fore.GREEN}[FOUND] Tipo probabile: {name}")
+                found = True
+        if not found: print(f"{Fore.RED}[!] Formato hash non riconosciuto.")
+
+    def get_exif_data(self, url):
+        print(f"\n{Fore.YELLOW}[+] Estrazione Metadati EXIF da: {url}")
+        try:
+            from PIL import Image
+            from PIL.ExifTags import TAGS
+            from io import BytesIO
+            res = requests.get(url, headers=self.headers, timeout=10)
+            img = Image.open(BytesIO(res.content))
+            exif = img._getexif()
+            if exif:
+                for tag, value in exif.items():
+                    print(f"{Fore.GREEN}{TAGS.get(tag, tag)}: {value}")
+            else: print(f"{Fore.RED}[-] Nessun metadato EXIF trovato.")
+        except ImportError: print(f"{Fore.RED}[!] Errore: Installa Pillow (pip install Pillow)")
+        except Exception as e: print(f"{Fore.RED}[!] Errore: {e}")
+
+    def advanced_dns(self, domain):
+        print(f"\n{Fore.YELLOW}[+] Record DNS Avanzati per: {domain}")
+        for r_type in ['CAA', 'SOA', 'DNSKEY']:
+            try:
+                answers = dns.resolver.resolve(domain, r_type)
+                for rdata in answers: print(f"{Fore.GREEN}[{r_type}] {rdata}")
+            except: print(f"{Fore.RED}[-] Nessun record {r_type} trovato.")
+
 def main():
     tool = Nebula()
     while True:
@@ -263,7 +319,8 @@ def main():
         print(f"{Fore.CYAN}║ {Fore.YELLOW}[06]{Fore.WHITE} Web Link Extraction        {Fore.YELLOW}[13]{Fore.WHITE} Ping Host                  {Fore.CYAN}║")
         print(f"{Fore.CYAN}║ {Fore.YELLOW}[07]{Fore.WHITE} Reverse DNS                {Fore.YELLOW}[14]{Fore.WHITE} Traceroute                 {Fore.CYAN}║")
         print(f"{Fore.CYAN}║ {Fore.YELLOW}[15]{Fore.WHITE} Phone Number Info          {Fore.YELLOW}[16]{Fore.WHITE} Wayback Machine            {Fore.CYAN}║")
-        print(f"{Fore.CYAN}║ {Fore.YELLOW}[17]{Fore.WHITE} Google Dorks Helper                                         {Fore.CYAN}║")
+        print(f"{Fore.CYAN}║ {Fore.YELLOW}[17]{Fore.WHITE} Google Dorks Helper        {Fore.YELLOW}[18]{Fore.WHITE} Hash Identifier            {Fore.CYAN}║")
+        print(f"{Fore.CYAN}║ {Fore.YELLOW}[19]{Fore.WHITE} Image EXIF Extractor       {Fore.YELLOW}[20]{Fore.WHITE} Advanced DNS/DNSSEC        {Fore.CYAN}║")
         print(f"{Fore.CYAN}╠══════════════════════════════════════════════════════════════════════╣")
         print(f"{Fore.CYAN}║                {Fore.RED}[00]{Fore.WHITE} Exit / Chiudi il Tool                          {Fore.CYAN}║")
         print(f"{Fore.CYAN}╚══════════════════════════════════════════════════════════════════════╝")
@@ -322,6 +379,15 @@ def main():
         elif choice == '17':
             dom = input("Dominio: ")
             tool.google_dorks(dom)
+        elif choice == '18':
+            h = input("Hash da identificare: ")
+            tool.identify_hash(h)
+        elif choice == '19':
+            url = input("URL Immagine (jpg/png): ")
+            tool.get_exif_data(url)
+        elif choice == '20':
+            dom = input("Dominio: ")
+            tool.advanced_dns(dom)
         elif choice in ['0', '00']:
             print(f"{Fore.MAGENTA}Chiusura...")
             break
